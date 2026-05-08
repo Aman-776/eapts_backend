@@ -1,0 +1,231 @@
+@startuml
+!define TABLE(name,desc) class name as "desc" << (T,#FFAAAA) >>
+!define PK(field) <u>field</u>
+!define FK(field) <i>field</i>
+
+' -------------------------------
+' Metadata Tables (Entity-specific)
+' -------------------------------
+TABLE(PrescriptionStatus, "PrescriptionStatus") {
+    PK(id) : int
+    name : string
+    description : string
+}
+
+TABLE(TransferRequestStatus, "TransferRequestStatus") {
+    PK(id) : int
+    name : string
+    description : string
+}
+
+TABLE(PaymentMethod, "PaymentMethod") {
+    PK(id) : int
+    name : string
+    description : string
+}
+
+TABLE(DrugCategory, "DrugCategory") {
+    PK(id) : int
+    name : string
+    description : string
+}
+
+' -------------------------------
+' Location & Stock Tables
+' -------------------------------
+TABLE(LocationTag, "LocationTag") {
+    PK(id) : int
+    name : string
+    description : string
+}
+
+TABLE(Location, "Location") {
+    PK(id) : int
+    name : string
+    FK(parent_id) : int
+    address : string
+    contact_info : string
+}
+
+TABLE(LocationTagMap, "LocationTagMap") {
+    PK(id) : int
+    FK(location_id) : int
+    FK(location_tag_id) : int
+}
+
+TABLE(Stock, "Stock") {
+    PK(id) : int
+    FK(drug_id) : int
+    FK(location_id) : int
+    batch_number : string
+    quantity : int
+    expiry_date : date
+    purchase_price : decimal
+}
+
+TABLE(StockTransferRequest, "StockTransferRequest") {
+    PK(id) : int
+    FK(from_location_id) : int
+    FK(to_location_id) : int
+    FK(status_id) : int
+    date : date
+}
+
+TABLE(TransferItem, "TransferItem") {
+    PK(id) : int
+    FK(request_id) : int
+    FK(drug_id) : int
+    quantity : int
+    batch_number : string
+}
+
+TABLE(Dispensing, "Dispensing") {
+    PK(id) : int
+    FK(patient_id) : int
+    FK(location_id) : int
+    FK(payment_method_id) : int
+    date : date
+    total_amount : decimal
+}
+
+TABLE(DispensingItem, "DispensingItem") {
+    PK(id) : int
+    FK(dispensing_id) : int
+    FK(drug_id) : int
+    quantity : int
+    batch_number : string
+    price : decimal
+}
+
+' -------------------------------
+' Drug & Prescription Tables
+' -------------------------------
+TABLE(Drug, "Drug") {
+    PK(id) : int
+    name : string
+    FK(category_id) : int
+    price : decimal
+}
+
+TABLE(DrugAttributeType, "DrugAttributeType") {
+    PK(id) : int
+    name : string
+    data_type : string
+}
+
+TABLE(DrugAttribute, "DrugAttribute") {
+    PK(id) : int
+    FK(drug_id) : int
+    FK(attribute_type_id) : int
+    value : string
+}
+
+TABLE(Prescription, "Prescription") {
+    PK(id) : int
+    FK(patient_id) : int
+    doctor_name : string
+    FK(status_id) : int
+    date : date
+}
+
+TABLE(PrescriptionItem, "PrescriptionItem") {
+    PK(id) : int
+    FK(prescription_id) : int
+    FK(drug_id) : int
+    quantity : int
+    instructions : string
+}
+
+' -------------------------------
+' Person, User, Patient, Role, Privilege
+' -------------------------------
+TABLE(Person, "Person") {
+    PK(id) : int
+    gender : string
+    birthdate : date
+    contact_info : string
+}
+
+TABLE(PersonName, "PersonName") {
+    PK(id) : int
+    FK(person_id) : int
+    given_name : string
+    middle_name : string
+    last_name : string
+    preferred : boolean
+}
+
+TABLE(Patient, "Patient") {
+    PK(id) : int
+    FK(person_id) : int
+    medical_record_number : string
+}
+
+TABLE(User, "User") {
+    PK(id) : int
+    FK(person_id) : int
+    username : string
+    password : string
+    status : string
+    last_login : datetime
+}
+
+TABLE(Role, "Role") {
+    PK(id) : int
+    name : string
+    description : string
+}
+
+TABLE(Privilege, "Privilege") {
+    PK(id) : int
+    name : string
+    description : string
+}
+
+TABLE(UserRole, "UserRole") {
+    PK(id) : int
+    FK(user_id) : int
+    FK(role_id) : int
+}
+
+TABLE(RolePrivilege, "RolePrivilege") {
+    PK(id) : int
+    FK(role_id) : int
+    FK(privilege_id) : int
+}
+
+' -------------------------------
+' Relationships
+' -------------------------------
+Location ||--o{ Location : "parent-child"
+Location ||--o{ LocationTagMap : "1..*"
+LocationTag ||--o{ LocationTagMap : "1..*"
+
+DrugCategory ||--o{ Drug : "1..*"
+Drug ||--o{ Stock : "1..*"
+Drug ||--o{ PrescriptionItem : "1..*"
+Drug ||--o{ DispensingItem : "1..*"
+Drug ||--o{ DrugAttribute : "1..*"
+DrugAttributeType ||--o{ DrugAttribute : "1..*"
+
+Patient ||--o{ Prescription : "1..*"
+Patient ||--o{ Dispensing : "1..*"
+
+Prescription ||--o{ PrescriptionItem : "1..*"
+PrescriptionStatus ||--o{ Prescription : "1..*"
+Location ||--o{ Stock : "1..*"
+Location ||--o{ Dispensing : "1..*"
+Location ||--o{ StockTransferRequest : "from/to"
+TransferRequestStatus ||--o{ StockTransferRequest : "1..*"
+StockTransferRequest ||--o{ TransferItem : "1..*"
+PaymentMethod ||--o{ Dispensing : "1..*"
+
+Person ||--o{ PersonName : "1..*"
+Person ||--o{ Patient : "1..1"
+Person ||--o{ User : "1..1"
+User ||--o{ UserRole : "1..*"
+Role ||--o{ UserRole : "1..*"
+Role ||--o{ RolePrivilege : "1..*"
+Privilege ||--o{ RolePrivilege : "1..*"
+
+@enduml
